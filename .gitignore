@@ -1,2 +1,6 @@
 .DS_Store
 .remote-sync.json
+create_tables.py
+pinout.txt
+masterofPuppets_debug.py
+index.html
