@@ -1,0 +1,40 @@
+# Arduino/RPi powered Greenhouse
+To jest projekt zaliczeniowy z przedmiotu Systemy Wbudowane. Arduino dba o poprawne działanie sensorów, pompy i przełączników. Raspberry Pi hostuje stronę z wszystkimi informacjami pobieranymi z Arduino.
+
+## Założenia
+System ma mieć za zadanie utrzymywać temperaturę w szklarni większą niż otoczenie. System ma mierzyć w odstępach co 5 minut:
+
+- Temperaturę powietrza
+- Wilgotność powietrza
+- Nawodnienie gleby
+
+Program dodatkowo nawadnia glebę poprzez pompę, która uaktywnia się wtedy kiedy poziom nawodnienia spadnie poniżej określonego poziomu. Temperatura jest regulowana poprzez przeprowadzony w szklarni kabel grzewczy, który podgrzewa temperaturę szklarni, jeżeli ustalona temperatura będzie za niska, oraz wyłacza się, jeżeli temperatura jest za wysoka. Wilgotność powietrza jest całkowicie opcjonalna.
+
+# Techniczne informacje
+Podstawowe techniczne informacje.
+
+## Środowisko kompilacji
+Podstawowym środowiskiem informacji jest Arduino IDE w wersji 1.8.3
+
+## Używane biblioteki
+Podstawowe biblioteki to:
+
+- RTCLib https://github.com/adafruit/RTClib
+- Serial wbudowany w Arduino
+- TBA
+
+## Zasilanie
+Zasilanie ma być regulowane z +12V do +5V za pomocą regulatora LM317T
+
+## Pinout
+
+DS1307 - A5 (SCL) | A4 (SDA) | +5V | GND
+DHT11 - D3 | +5V | GND
+Nawodnienie - A0 | +5V | GND
+Przełączniki:
+IN1 -> D6 (LED)
+IN2 -> D7 (POMPA)
+IN3 -> D8 (KABEL GRZEWCZY)
+IN4 -> D9 (TBA)
+
+# Bill of Materials
