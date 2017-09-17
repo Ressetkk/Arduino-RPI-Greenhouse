@@ -1,0 +1,73 @@
+{% load staticfiles %}
+{% load widget_tweaks %}
+
+<!DOCTYPE html>
+<html lang="pl">
+	<head>
+		<link href="{% static 'bootstrap.min.css' %}"
+			rel="stylesheet">
+		<link href="{% static 'style.css' %}"
+			rel="stylesheet">
+
+		<title>Szklarnia</title>
+	</head>
+	<body>
+		<nav class="navbar navbar-default navbar-static-top text-center" >
+			<a href="/">
+				<img src="{% static 'images/logo.png' %}" alt="Szklarnia" height="200px">
+		</a> </nav>
+<div class="container">
+<div class="col-lg-6 col-md-6 col-sm-12 col-xs-12">
+	<div class="szklarnia panel panel-default">
+	{% for val in sensor_data %}
+	<div class="panel-heading">
+		<h2 class="panel-title">{{ val.name }}</h2>
+	</div>
+	<div class="panel-body">
+	Wartość: {{ val.value }}
+	<br>
+	Opis: {{ val.description }}
+	</div>
+	{% endfor %}
+	</div>
+
+	<div class="szklarnia panel panel-default">
+	{% for val in button_data %}
+	<div class="panel-heading">
+		<h2 class="panel-title"> {{ val.name }}</h2>
+	</div>
+	<div class="panel-body">
+		Stan:
+		{% if val.state %}
+			Włączony
+		{% else %}
+			Wyłączony
+		{% endif %}
+	</div>
+	{% endfor %}
+	</div>
+
+</div>
+<div class="col-lg-6 col-md-6 col-sm-12 col-xs-12">
+	<div class="szklarnia panel panel-default">
+	<div class="panel-heading">
+		<h2 class="panel-title">Ustaw wartości</h2>
+	</div>
+	<div class="panel-body">
+		<form action="#" method="POST">
+		{% csrf_token %}
+		{% for row in form %}
+		<div class="form-group">
+			{{ row.label_tag }}
+			{{ row }}
+		</div>
+		{% endfor %}
+
+		<button type="submit" name="submit" class="btn btn-primary">Zapisz</button>
+	</form>
+	</div>
+</div>
+</div>
+</div>
+	</body>
+</html>
