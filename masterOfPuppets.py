@@ -58,6 +58,9 @@ while 1:
         sendToDB()
         print "ding"
         sleep(2)
+    except KeyboardInterrupt:
+        con.close()
+        break
     except:
         print "Zjebalo sie"
         sleep(2)
