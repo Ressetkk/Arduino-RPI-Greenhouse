@@ -54,7 +54,7 @@ def read():
     I2CPacket = []
     I2CPacket =  bus.read_i2c_block_data(address, 0, 19)
     hexdata = ''.join([chr(item) for item in I2CPacket])
-    print unpack('fffb???bbb',hexdata)
+    # print unpack('fffb???bbb',hexdata)
     return unpack('fffb???bbb',hexdata)
 
 while 1:
