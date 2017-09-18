@@ -27,15 +27,21 @@ DallasTemperature ds_sensor(&oneWire);
 byte temp_value = 26;
 byte soil_value = 70;
 byte temp_range = 1;
-bool in1_state = 0; // LED power state
+bool in1_state = 1; // LED power state
 
 // those will stay unharmed
 float ds_temp;  // in Celsius
 float dht_hum;  // percentage
 float dht_temp; // in Celsius
 byte soil;      // percentage
-bool in2_state = 1;
-bool in3_state = 1;
+bool in2_state = 0;
+bool in3_state = 0;
+
+byte I2CPacket[PACKET_SIZE];
+
+int prev_hour = -9999;
+int hours = 0;
+int hour_diff;
 
 union float2bytes_t 
 { 
@@ -44,26 +50,78 @@ union float2bytes_t
 };
 
 void setup() {
-  Serial.begin(9600);
   Wire.begin(3);
   Wire.onReceive(receiveEvent);
   Wire.onRequest(requestEvent);
   
   if (! rtc.begin()) {
-    Serial.println("Couldn't find RTC");
-    while (1);
+    while(1);
   }
   if (!rtc.isrunning()) {
-    Serial.println("RTC is NOT running");
     rtc.adjust(DateTime(F(__DATE__), F(__TIME__)));
   }
 
   pinMode(in1_pin, OUTPUT);
   pinMode(in2_pin, OUTPUT);
-  pinMode(in3_pin, OUTPUT); 
+  pinMode(in3_pin, OUTPUT);
+  digitalWrite(in1_pin, HIGH);
+  digitalWrite(in2_pin, HIGH);
+  digitalWrite(in3_pin, HIGH);
 }
 
-byte I2CPacket[PACKET_SIZE];
+void loop() {
+  DateTime now = rtc.now();
+  delay(1000);
+  ds_sensor.requestTemperatures();
+  dht_hum = dht.readHumidity();
+  dht_temp = dht.readTemperature();
+  int soil_read = analogRead(soil_pin);
+  soil = 100 - (float(soil_read) / 1023 * 100);
+  ds_temp = ds_sensor.getTempCByIndex(0);
+
+  if ((!in1_state) && (digitalRead(in1_pin) == 1)) {
+    digitalWrite(in1_pin, LOW);
+  }
+  else if((in1_state) && (digitalRead(in1_pin) == 0)) {
+    digitalWrite(in1_pin, HIGH);
+  }
+  
+  if (dht_temp > (temp_value + temp_range)) {
+    digitalWrite(in3_pin, HIGH);
+    in3_state = false;
+  }
+  else if (dht_temp < (temp_value - temp_range)) {
+    digitalWrite(in3_pin, LOW);
+    in3_state = true;
+  }
+
+  
+  if (soil < (soil_value - 3)) {
+    hours = now.hour();
+    hour_diff = hours - prev_hour;
+    if (hour_diff < 0) {
+      prev_hour += 24;
+    }
+    if (hour_diff >= 1) {
+      digitalWrite(in2_pin, LOW);
+      in2_state = true;
+      delay(1000);
+      digitalWrite(in2_pin, HIGH);
+      in2_state = false;
+      prev_hour = hours;
+    }
+  }
+}
+
+void requestEvent() {
+  setI2Cpacket();
+  Wire.write(I2CPacket, PACKET_SIZE);
+}
+
+void receiveEvent(int howMany) {
+  Wire.read();
+  if (Wire.available()) getI2CPacket();
+}
 
 void setI2Cpacket() {
 
@@ -112,55 +170,6 @@ void setI2Cpacket() {
   // temperature range from -x to x
   I2CPacket[18] = temp_range;
 
-}
-
-void water_plants(int _time) {
-  digitalWrite(in2_pin, HIGH);
-  delay(_time * 1000);
-  digitalWrite(in2_pin, LOW);
-}
-
-void loop() {
-  delay (500);
-  DateTime now = rtc.now();
-
-  ds_sensor.requestTemperatures();
-  dht_hum = dht.readHumidity();
-  dht_temp = dht.readTemperature();
-  int soil_read = analogRead(soil_pin);
-  soil = 100 - (float(soil_read) / 1023 * 100);
-  ds_temp = ds_sensor.getTempCByIndex(0);
-
-  if ((in1_state) && (digitalRead(in1_pin) == 0)) {
-    digitalWrite(in1_pin, HIGH);
-  }
-  else if((!in1_state) && (digitalRead(in1_pin) == 1)) {
-    digitalWrite(in1_pin, LOW);
-  }
-  
-  if (dht_temp > (temp_value + temp_range)) {
-    digitalWrite(in3_pin, LOW);
-  }
-  else if (dht_temp < (temp_value - temp_range)) {
-    digitalWrite(in3_pin, HIGH);
-  }
-  if (soil > (soil_value + 100)) {
-    water_plants(1);
-  }
-}
-
-void requestEvent() {
-  Serial.println("request");
-  Serial.println("preparing packet...");
-  setI2Cpacket();
-  Wire.write(I2CPacket, PACKET_SIZE);
-  Serial.println("sent");
-}
-
-void receiveEvent(int howMany) {
-  Serial.println("receive");
-  Wire.read();
-  if (Wire.available()) getI2CPacket();
 }
 
 void getI2CPacket() {

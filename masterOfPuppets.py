@@ -7,20 +7,23 @@ bus = smbus.SMBus(1)
 address = 0x03
 
 con = None
-con = lite.connect('db.sqlite3')
+
 
 def sendToDB():
+    con = lite.connect('db.sqlite3')
     cur = con.cursor()
     data = read()
     cur.execute("update main_app_sensors set value=%s where id=0" %data[0])
     cur.execute("update main_app_sensors set value=%s where id=1" %data[1])
     cur.execute("update main_app_sensors set value=%s where id=2" %data[2])
     cur.execute("update main_app_sensors set value=%s where id=3" %data[3])
-    cur.execute("update main_app_buttons set state=%s where id=1" %1 if data[5] == True else 0)
-    cur.execute("update main_app_buttons set state=%s where id=2" %1 if data[6] == True else 0)
+    cur.execute("update main_app_buttons set state={} where id=1".format(1 if data[5] == True else 0))
+    cur.execute("update main_app_buttons set state={} where id=2" .format(1 if data[6] == True else 0))
     con.commit()
+    con.close()
 
 def getFromDB():
+    con = lite.connect('db.sqlite3')
     cur = con.cursor()
     data = []
     for val in (4,5,6):
@@ -29,13 +32,14 @@ def getFromDB():
     cur.execute("select state from main_app_buttons where id=0")
     data.append(True if cur.fetchone()[0] == 1 else False)
     send(data)
+    con.close()
 
 
 debugSendPacket = [15,20,1, True]
 
 def send(data):
     """
-    simple send function to send a list of values over I2c
+    simple send function to send a list of values over I2C
     """
     # packet description
     # wanted temp, wanted soil moisture %, wanted temp range, LED power
@@ -50,18 +54,18 @@ def read():
     I2CPacket = []
     I2CPacket =  bus.read_i2c_block_data(address, 0, 19)
     hexdata = ''.join([chr(item) for item in I2CPacket])
+    print unpack('fffb???bbb',hexdata)
     return unpack('fffb???bbb',hexdata)
 
 while 1:
     try:
         getFromDB()
         sendToDB()
-        print "ding"
-        sleep(2)
+        # print "ding"
+        sleep(5)
     except KeyboardInterrupt:
-        con.close()
         break
-    except:
-        print "Zjebalo sie"
-        sleep(2)
+    except Exception as e:
+        print "Zjebalo sie:", e
+        sleep(5)
         continue
