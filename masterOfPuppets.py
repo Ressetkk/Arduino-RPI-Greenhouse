@@ -2,9 +2,11 @@ import smbus
 from time import sleep
 from struct import unpack
 import sqlite3 as lite
+from picamera import PiCamera
 
 bus = smbus.SMBus(1)
 address = 0x03
+camera = PiCamera()
 
 con = None
 
@@ -34,9 +36,6 @@ def getFromDB():
     send(data)
     con.close()
 
-
-debugSendPacket = [15,20,1, True]
-
 def send(data):
     """
     simple send function to send a list of values over I2C
@@ -61,7 +60,7 @@ while 1:
     try:
         getFromDB()
         sendToDB()
-        # print "ding"
+        camera.capture('/home/pi/szklarnia/main_app/static/plant/plant_pic.jpg')
         sleep(5)
     except KeyboardInterrupt:
         break
