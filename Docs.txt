@@ -1,14 +1,23 @@
 # Arduino/RPi powered Greenhouse
-To jest projekt zaliczeniowy z przedmiotu Systemy Wbudowane. Arduino dba o poprawne działanie sensorów, pompy i przełączników. Raspberry Pi hostuje stronę z wszystkimi informacjami pobieranymi z Arduino.
+To jest projekt zaliczeniowy z przedmiotu Systemy Wbudowane. Arduino dba o poprawne działanie sensorów, pompy i przełączników. Raspberry Pi hostuje stronę ze wszystkimi informacjami pobieranymi z Arduino.
 
 ## Założenia
-System ma mieć za zadanie utrzymywać temperaturę w szklarni większą niż otoczenie. System ma mierzyć w odstępach co 5 minut:
+System ma mieć za zadanie utrzymywać temperaturę w szklarni większą niż otoczenie. System ma sprawdzać informacje co sekundę:
 
 - Temperaturę powietrza
 - Wilgotność powietrza
 - Nawodnienie gleby
 
-Program dodatkowo nawadnia glebę poprzez pompę, która uaktywnia się wtedy kiedy poziom nawodnienia spadnie poniżej określonego poziomu. Temperatura jest regulowana poprzez przeprowadzony w szklarni kabel grzewczy, który podgrzewa temperaturę szklarni, jeżeli ustalona temperatura będzie za niska, oraz wyłacza się, jeżeli temperatura jest za wysoka. Wilgotność powietrza jest całkowicie opcjonalna.
+Program dodatkowo nawadnia glebę poprzez pompę, która uaktywnia się wtedy kiedy poziom nawodnienia spadnie poniżej określonego poziomu. Jednakże w celu bezpieczeństwa podlewanie nie następuje nie częściej niż co godzinę. Temperatura jest regulowana poprzez przeprowadzony w szklarni kabel grzewczy, który podgrzewa temperaturę szklarni, jeżeli ustalona temperatura będzie za niska, oraz wyłacza się, jeżeli temperatura jest za wysoka. Wilgotność powietrza jest całkowicie opcjonalna.
+
+Raspberry Pi pobiera informacje z Arduino co 5 sekund pobierając informacje:
+
+- Temperatura w szklarni
+- Temperatura poza szklarnią
+- Wilgotność powietrza
+- Nawodnienie gleby
+- Stany przełczników (ON/OFF)
+- Ustalone poziomy temperatury, nawodnienia i zakres
 
 # Techniczne informacje
 Podstawowe techniczne informacje.
@@ -16,15 +25,21 @@ Podstawowe techniczne informacje.
 ## Środowisko kompilacji
 Podstawowym środowiskiem informacji jest Arduino IDE w wersji 1.8.3
 
+## Strona internetowa
+Baza danych oprta na SQLite3, strona internetowa oparta pod kontrolą Django 1.11
+
 ## Używane biblioteki
 Podstawowe biblioteki to:
 
 - RTCLib https://github.com/adafruit/RTClib
 - Serial wbudowany w Arduino
-- TBA
+- Wire
+- DHT
+- OneWire
+
 
 ## Zasilanie
-Zasilanie ma być regulowane z +12V do +5V za pomocą regulatora LM317T
+Układ jest zasilany poprzez zasilacz +12V DC 2.1A. Dodatkowo napięcie jest regulowane poprzez użyty regulator LM317T, który ustawia napięcie +5V do zasilenia układu ATmega328P oraz Raspberry Pi.
 
 ## Pinout
 
@@ -35,6 +50,36 @@ Przełączniki:
 IN1 -> D6 (LED)
 IN2 -> D7 (POMPA)
 IN3 -> D8 (KABEL GRZEWCZY)
-IN4 -> D9 (TBA)
+IN4 -> D9 (NC)
 
 # Bill of Materials
+- DHT11 x1
+- Czujnik wilgotności gleby x1
+- Czujnik temperatury DS18B20+ x1
+- Zegar czasu rzeczywistego TinyRTC DS1307 x1
+- Pompka wodna 12V x1
+- Paski grow LED 12V x4
+- Kabel grzewczy 50W
+
+- Rezystory 10K x2
+- Rezystor 620 Ohm x1
+- Rezystor 100 Ohm x1
+- Rezystor 240 Ohm x1
+- Kondensator elektrolityczny 470 uF 25V x1
+- Kondensator ceramiczny 1 uF x1
+- Kondensatory ceramiczne 22 pF x2
+- ATmega328P x1
+- Oscylator kwarcowy 16MHz x1
+- Raspberry Pi 3 B+ x1
+- Kamera do Raspberry Pi x1
+- Button x1
+- Zasilacz DC +12V 2.1A
+- Regulator napięcia LM317T
+- Zestaw czterech przekaźników x1
+
+# Opis pracy
+## Arduino
+Arduino odpowiada za poprawną pracę całego układu czujników i przekaźników. Zczytuje informacje z sensorów i w zależności od ich odczytu wykonuje całą automatyzację, tj. na podstawie temperatury włącza bądź wyłącza nagrzewanie, w zależnosci od nawodnienia gleby i czasu od ostatniego podlewania włącza pompę. Dodatkowo odpytany przez Rspberry Pi, z którym komunikuje się poprzez I2C, przygotuje pakiet danych, który wysyła do Raspberry. Arduino również odbiera informacje wysłane przez Raspberry o ustalonych parametrach temperatury, wilgotności i stanu naświetlenia.
+
+## Raspberry Pi
+Raspbery Pi kominukuje się z Arduino poprzez magistralę I2C. Co 5 sekund pobiera wszystkie informacje na temat sensorów i przełączników. Następnie te informacje odpowiednio selecjonuje i aktualizuje bazę danych SQLite3. Wszystkie pobrane informacje są wyświetlone na stronie internetowej opartej na Django. Do Raspberry Pi podłączona jest kamera, która również co 5 sekund wykonuje zdjęcie wnętrza szklarni. Na stronie internetowej można ustawić informacje o ustalonej temperaturze w szklarni, wilgotności gleby, zakresie temperatur (-x do x) oraz włącznika naświetlenia.

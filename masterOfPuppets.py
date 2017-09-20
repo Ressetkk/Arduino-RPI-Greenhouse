@@ -7,6 +7,8 @@ from picamera import PiCamera
 bus = smbus.SMBus(1)
 address = 0x03
 camera = PiCamera()
+camera.led = False
+camera.rotation = 270
 
 con = None
 
